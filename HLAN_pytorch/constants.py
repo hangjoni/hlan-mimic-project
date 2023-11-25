@@ -1,0 +1,15 @@
+WORKSPACEFOLDER = "/Users/hungryfoolish/Documents/OMSCS/BD4H/project/Explainable-Automated-Medical-Coding-master"
+WORD2VEC_MODEL_PATH = f"{WORKSPACEFOLDER}/embeddings/processed_full.w2v"
+WORD2VEC_LABEL_PATH_200 = f"{WORKSPACEFOLDER}/embeddings/train_full-code-emb-mimic3-tr-200.model"
+WORD2VEC_LABEL_PATH_400 = f"{WORKSPACEFOLDER}/embeddings/train_full-code-emb-mimic3-tr-400.model"
+TRAINING_DATA_PATH = f"{WORKSPACEFOLDER}/datasets/data/train_50_eamc.csv"
+VALIDATION_DATA_PATH = f"{WORKSPACEFOLDER}/datasets/data/dev_50_eamc.csv"
+TESTING_DATA_PATH = f"{WORKSPACEFOLDER}/datasets/data/test_50_eamc.csv"
+DATASET = "mimic3-ds-50"
+NUM_CLASSES = 50
+SEQUENCE_LENGTH = 2500
+BATCH_SIZE = 32
+EMBED_SIZE=100
+HIDDEN_SIZE=100
+NUM_SENTENCES=100
+SENTENCE_LENGTH=SEQUENCE_LENGTH // NUM_SENTENCES
