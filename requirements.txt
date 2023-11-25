@@ -1,0 +1,10 @@
+torch
+gensim
+tqdm
+wandb
+numpy
+pandas
+matplotlib
+scikit_learn
+scipy
+spacy
