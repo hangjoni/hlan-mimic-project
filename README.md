@@ -12,3 +12,4 @@ pip install -r requirements.txt
 ```
 python ./HLAN_pytorch/train.py --epochs 1 --lr 0.0005
 ```
+for debugging purpose, it is useful to run training with just a few data points, see HLAN_pytorch/train_playground.ipynb for example
