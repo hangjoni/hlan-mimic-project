@@ -1,4 +1,4 @@
-WORKSPACEFOLDER = "/Users/hungryfoolish/Documents/OMSCS/BD4H/project/Explainable-Automated-Medical-Coding-master"
+WORKSPACEFOLDER = ".."
 WORD2VEC_MODEL_PATH = f"{WORKSPACEFOLDER}/embeddings/processed_full.w2v"
 WORD2VEC_LABEL_PATH_200 = f"{WORKSPACEFOLDER}/embeddings/train_full-code-emb-mimic3-tr-200.model"
 WORD2VEC_LABEL_PATH_400 = f"{WORKSPACEFOLDER}/embeddings/train_full-code-emb-mimic3-tr-400.model"
