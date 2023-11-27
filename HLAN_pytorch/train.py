@@ -16,7 +16,7 @@ from constants import *
 # Add the parent directory to the system path
 sys.path.append("..")
 
-from utils import create_dataloaders, initialization_using_word2vec
+from utils import create_dataloaders, initialization_using_word2vec, create_subset_dataloader
 from HAN_model import HierarchicalAttentionNetwork
 
 from metrics import *
@@ -56,7 +56,7 @@ def train(train_dataloader, valid_dataloader, vocab_size, epochs=1, lr=0.0005, l
     date_time_string = datetime.datetime.now().strftime("%Y%m%d_%H%M")
     while dir_exist:
         random_string = ''.join(random.choice(string.ascii_letters) for i in range(5))
-        checkpoint_dir = os.path.join("..", "checkpoints", f"{date_time_string}_{random_string}")
+        checkpoint_dir = os.path.join("..", "checkpoints", f"{date_time_string}_{epochs}epochs_{random_string}")
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
             print(f"Created directory to save model checkpoint at {checkpoint_dir}")
@@ -112,10 +112,21 @@ def train(train_dataloader, valid_dataloader, vocab_size, epochs=1, lr=0.0005, l
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training script, expect epochs and learning rate arguments, otherwise will train for 1 epoch with 0.0005 lr")
-    parser.add_argument("--epochs", type="int", help = "Number of epochs to train for", default = 1)
-    parser.add_argument("--lr", type="float", help = "Learning rate", default = 0.0005)
+    parser.add_argument("--epochs", type=int, help = "Number of epochs to train for", default = 1)
+    parser.add_argument("--lr", type=float, help = "Learning rate", default = 0.0005)
+    parser.add_argument("--log", type=bool, help = "Whether to log to wandb", default = True)
+    parser.add_argument("--verbose", type=bool, help = "Whether to print training progress", default = False)
+    parser.add_argument("--checkpoint_to_resume_from", type=str, help = "Path to checkpoint to resume training from", default = None)
+    parser.add_argument("--device", type=str, help = "Device to train on", default = "cpu")
+    parser.add_argument("--mini", type=bool, help = "Whether to use mini dataset. Useful for testing", default = False)
+    
     args = parser.parse_args()
     train_dataloader, valid_dataloader, vocab_size = create_dataloaders()
+    if args.mini:
+        train_dataloader = create_subset_dataloader(train_dataloader, 10)
+        valid_dataloader = create_subset_dataloader(valid_dataloader, 10)
+    if args.checkpoint_to_resume_from is not None:
+        print(f"Resuming training from checkpoint {args.checkpoint_to_resume_from}")
     print(f"Training model with {args.epochs} epochs and {args.lr} learning rate")
-    model = train(train_dataloader, valid_dataloader, vocab_size, epochs=args.epochs, lr=args.lr)
+    model = train(train_dataloader, valid_dataloader, vocab_size, epochs=args.epochs, lr=args.lr, log=args.log, verbose=args.verbose, checkpoint_to_resume_from=args.checkpoint_to_resume_from, device=torch.device(args.device))
     print("Training done! Check Weights and Biases for plots. Check ../checkpoints folder for checkpoints.")
