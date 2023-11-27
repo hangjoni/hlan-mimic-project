@@ -84,7 +84,9 @@ def create_dataloaders():
 
     return train_dataloader, valid_dataloader, vocab_size
 
-def initialization_using_word2vec(model):
+
+def initialize_model(model, le=True):
+    """le means initialize using label and word embedding. otherwise initialize using random values"""
     vocabulary_word2index_label,vocabulary_index2word_label = create_vocabulary_label_pre_split(training_data_path=TRAINING_DATA_PATH, validation_data_path=VALIDATION_DATA_PATH, testing_data_path=TESTING_DATA_PATH, name_scope=DATASET + "-HAN")
     vocabulary_word2index, vocabulary_index2word = create_vocabulary(WORD2VEC_MODEL_PATH,name_scope=DATASET + "-HAN")
     
@@ -93,39 +95,40 @@ def initialization_using_word2vec(model):
     # initialize embeddings with pretrained word2vec embeddings
     emb_bound = np.sqrt(6.0) / np.sqrt(vocab_size)
     embeddings = torch.rand((vocab_size, EMBED_SIZE)) * 2 * emb_bound - emb_bound
-    
-    word_w2v = Word2Vec.load(WORD2VEC_MODEL_PATH)
-    for i in range(vocab_size):
-        word = vocabulary_index2word[i]
-        # word might not exists in the word2vec model!
-        if word in word_w2v.wv.key_to_index:
-            embeddings[i] = torch.tensor(word_w2v.wv[word])
-
 
     # initialize linear projection on layer
     label_w2v_400 = Word2Vec.load(WORD2VEC_LABEL_PATH_400)
     bound = np.sqrt(6.0) / np.sqrt(NUM_CLASSES + HIDDEN_SIZE * 4)
     W_linear = torch.rand((NUM_CLASSES, HIDDEN_SIZE*4)) * 2 * bound - bound
 
-    for i in range(NUM_CLASSES):
-        label = vocabulary_index2word_label[i]
-        if label in label_w2v_400.wv.key_to_index:
-            W_linear[i, :] = torch.tensor(label_w2v_400.wv[label])
-        else:
-            print(i, label, 'not in vocab')
-
     # initialize context vector
     label_w2v_200 = Word2Vec.load(WORD2VEC_LABEL_PATH_200)
     word_context_vector = torch.rand((NUM_CLASSES, HIDDEN_SIZE * 2)) * 2* bound - bound
     sentence_context_vector = torch.rand((NUM_CLASSES, HIDDEN_SIZE * 2)) * 2* bound - bound
 
-    for i in range(NUM_CLASSES):
-        label = vocabulary_index2word_label[i]
-        if label in label_w2v_200.wv.key_to_index:
-            word_context_vector[i, :] = torch.tensor(label_w2v_200.wv[label])
-            sentence_context_vector[i, :] = torch.tensor(label_w2v_200.wv[label])
-        else:
-            print(i, label, 'not in vocab')
+    if le:
+        word_w2v = Word2Vec.load(WORD2VEC_MODEL_PATH)
+        for i in range(vocab_size):
+            word = vocabulary_index2word[i]
+            # word might not exists in the word2vec model!
+            if word in word_w2v.wv.key_to_index:
+                embeddings[i] = torch.tensor(word_w2v.wv[word])
+
+
+        for i in range(NUM_CLASSES):
+            label = vocabulary_index2word_label[i]
+            if label in label_w2v_400.wv.key_to_index:
+                W_linear[i, :] = torch.tensor(label_w2v_400.wv[label])
+            else:
+                print(i, label, 'not in vocab')
+
+        for i in range(NUM_CLASSES):
+            label = vocabulary_index2word_label[i]
+            if label in label_w2v_200.wv.key_to_index:
+                word_context_vector[i, :] = torch.tensor(label_w2v_200.wv[label])
+                sentence_context_vector[i, :] = torch.tensor(label_w2v_200.wv[label])
+            else:
+                print(i, label, 'not in vocab')
 
     with torch.no_grad():
         model.embeddings.weight.data.copy_(embeddings)

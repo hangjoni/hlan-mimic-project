@@ -16,19 +16,25 @@ from constants import *
 # Add the parent directory to the system path
 sys.path.append("..")
 
-from utils import create_dataloaders, initialization_using_word2vec, create_subset_dataloader
+from utils import create_dataloaders, initialize_model, create_subset_dataloader
 from HAN_model import HierarchicalAttentionNetwork
 
 from metrics import *
 
 
-def train(train_dataloader, valid_dataloader, vocab_size, epochs=1, lr=0.0005, log=True, verbose=False, checkpoint_to_resume_from=None, device=torch.device("cpu")):
+def train(train_dataloader, valid_dataloader, vocab_size, epochs=1, lr=0.0005, log=True, verbose=False, checkpoint_to_resume_from=None, device=torch.device("cpu"), le=True):
+    """
+    le: boolean - whether to do label and word embedding initiliazation for the model
+    """
     model = HierarchicalAttentionNetwork(vocab_size=vocab_size, embed_size=EMBED_SIZE, hidden_size=HIDDEN_SIZE, num_sentences=NUM_SENTENCES, sentence_length=SENTENCE_LENGTH, num_classes=NUM_CLASSES)
-    if checkpoint_to_resume_from is None:
-        model = initialization_using_word2vec(model)
-    else:
+    if checkpoint_to_resume_from is None and le:
+        model = initialize_model(model, le)
+    elif checkpoint_to_resume_from is not None:
         # load checkpoint. this is useful for resuming training
         model.load_state_dict(torch.load(checkpoint_to_resume_from))
+    else:
+        pass 
+
     model.to(device)
 
     criterion = nn.BCEWithLogitsLoss()
@@ -114,12 +120,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training script, expect epochs and learning rate arguments, otherwise will train for 1 epoch with 0.0005 lr")
     parser.add_argument("--epochs", type=int, help = "Number of epochs to train for", default = 1)
     parser.add_argument("--lr", type=float, help = "Learning rate", default = 0.0005)
-    parser.add_argument("--log", type=bool, help = "Whether to log to wandb", default = True)
-    parser.add_argument("--verbose", type=bool, help = "Whether to print training progress", default = False)
+    parser.add_argument("--log", action="store_true", help = "Whether to log to wandb")
+    parser.add_argument("--verbose", action="store_true", help = "Whether to print training progress")
     parser.add_argument("--checkpoint_to_resume_from", type=str, help = "Path to checkpoint to resume training from", default = None)
     parser.add_argument("--device", type=str, help = "Device to train on", default = "cpu")
-    parser.add_argument("--mini", type=bool, help = "Whether to use mini dataset. Useful for testing", default = False)
-    
+    parser.add_argument("--mini", action="store_true", help = "Whether to use mini dataset. Useful for testing")
+    parser.add_argument("--le", action="store_true", help = "Whether to do label and word embedding initiliazation for the model")
     args = parser.parse_args()
     train_dataloader, valid_dataloader, vocab_size = create_dataloaders()
     if args.mini:
@@ -127,6 +133,10 @@ if __name__ == "__main__":
         valid_dataloader = create_subset_dataloader(valid_dataloader, 10)
     if args.checkpoint_to_resume_from is not None:
         print(f"Resuming training from checkpoint {args.checkpoint_to_resume_from}")
+    if args.le:
+        print("Doing label and word embedding initiliazation for the model")
+    else:
+        print("Random initiliazation for the model (not using Label Embedding to initialize)")
     print(f"Training model with {args.epochs} epochs and {args.lr} learning rate")
     model = train(train_dataloader, valid_dataloader, vocab_size, epochs=args.epochs, lr=args.lr, log=args.log, verbose=args.verbose, checkpoint_to_resume_from=args.checkpoint_to_resume_from, device=torch.device(args.device))
     print("Training done! Check Weights and Biases for plots. Check ../checkpoints folder for checkpoints.")

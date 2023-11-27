@@ -41,19 +41,21 @@ mini dataset has 10 data points. Use this option when testing the training scrip
 
 ```
 cd HLAN_pytorch
-python train.py --epochs 5 --mini True
+python train.py --epochs 5 --mini
 ```
 
 #### Run training and log to Weights and Biases
 
 ```
 cd HLAN_pytorch
-python train.py --epochs 5 --log True --verbose True
+python train.py --epochs 5 --log --verbose
 ```
 
 This requires a Weights and Biases account. Follow the steps [here](https://docs.wandb.ai/quickstart) to create an account and login using Terminal.
 
-Training loss and metrics will be logged to Weights and Biases when setting --log True
+Training loss and metrics will be logged to Weights and Biases when setting `--log`
+
+use `--verbose` if want to print every epoch results to the console
 
 #### Resume training with a previously saved checkpoint
 
@@ -61,7 +63,7 @@ By default, we save the best and last checkpoint to ./checkpoints folder during 
 
 ```
 cd HLAN_pytorch
-python train.py --epochs 5 --log True --checkpoint_to_resume_from ../checkpoints/20231127_1604_qxDMJ/last.pt
+python train.py --epochs 5 --log --checkpoint_to_resume_from ../checkpoints/20231127_1604_qxDMJ/last.pt
 ```
 
 #### Train with GPU or MPS
@@ -71,5 +73,16 @@ To train with Mac GPU MPS, use `--device mps`
 
 ```
 cd HLAN_pytorch
-python train.py --epochs 5 --device mps --mini True
+python train.py --epochs 5 --device mps --mini
 ```
+
+#### Train with or without Label Embedding Initalization
+
+To train Label Embedding initialization `--le`
+
+```
+cd HLAN_pytorch
+python train.py --epochs 5 --mini --le
+```
+
+To train without, simply omit .
