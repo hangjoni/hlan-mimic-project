@@ -1,5 +1,7 @@
 import numpy as np
 from sklearn import metrics
+import torch
+import torch.nn.functional as F
 
 def calculate_accuracy(labels_predicted,labels): # this should be same as the recall value
     # turn the multihot representation to a list of true labels
@@ -144,3 +146,13 @@ def intersect_size(yhat, y, axis):
     return np.logical_and(yhat, y).sum(axis=axis).astype(float)
     #numpy.logical_and(x1, x2, /, out=None, *, where=True, casting='same_kind', order='K', dtype=None, subok=True[, signature, extobj]) = <ufunc 'logical_and'>
     #Compute the truth value of x1 AND x2 element-wise.
+
+def get_micro_metrics(all_logits, all_labels_actuals, threshold=0.5):
+    all_probs = [F.sigmoid(logits) for logits in all_logits]
+
+    preds = np.concatenate(all_probs)
+    actuals = np.concatenate(all_labels_actuals)
+    preds = np.where(preds > threshold, 1, 0)
+    acc, prec, rec, f1 = all_micro(preds.ravel(), actuals.ravel())
+        
+    return acc, prec, rec, f1

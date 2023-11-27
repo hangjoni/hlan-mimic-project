@@ -6,3 +6,4 @@ HLAN_pytorch/runs/
 *.zip
 embeddings/
 datasets/
+checkpoints/

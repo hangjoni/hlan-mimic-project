@@ -1,3 +1,5 @@
+import os
+import pickle
 import sys
 sys.path.append("..")
 
@@ -10,9 +12,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset
 from constants import *
 
-from HLAN.data_util_gensim import create_vocabulary_label_pre_split, create_vocabulary
 from torch.utils.data import DataLoader, Subset
-from metrics import all_micro
 
 def load_data_multilabel_pre_split(vocabulary_word2index, vocabulary_word2index_label, data_path='', keep_label_percent=1.0):
     print("load_data.started...")
@@ -163,14 +163,109 @@ def create_subset_dataloader(original_loader, num_samples=10):
 
     return subset_loader
 
-def get_micro_metrics_all_thresholds(all_logits, all_labels_actuals):
-    thresholds = [0.1, 0.2, 0.3, 0.4, 0.5]
-    all_probs = [F.sigmoid(logits) for logits in all_logits]
-    ret = {}
-    for threshold in thresholds:
-        preds = np.concatenate(all_probs)
-        actuals = np.concatenate(all_labels_actuals)
-        preds = np.where(preds > threshold, 1, 0)
-        acc, prec, rec, f1 = all_micro(preds.ravel(), actuals.ravel())
-        ret[threshold] = (acc, prec, rec, f1)
-    return ret
+
+def sort_by_value(d):
+    items=d.items()
+    backitems=[[v[1],v[0]] for v in items]
+    backitems.sort(reverse=True)
+    return [ backitems[i][1] for i in range(0,len(backitems))]
+
+def create_vocabulary_label_pre_split(training_data_path,validation_data_path,testing_data_path,name_scope='',use_seq2seq=False,label_freq_th=0):
+    '''
+    create vocabulary from data split files - validation data path can be None or empty string if not exists.
+    '''
+    cache_path ='../cache_vocabulary_label_pik/'+ name_scope + "_label_vocabulary.pik"
+    if os.path.exists(cache_path):
+        with open(cache_path, 'rb') as data_f:
+            vocabulary_word2index_label, vocabulary_index2word_label=pickle.load(data_f)
+            return vocabulary_word2index_label, vocabulary_index2word_label
+    else:
+        count=0
+        vocabulary_word2index_label={}
+        vocabulary_index2word_label={}
+        vocabulary_label_count_dict={} #{label:count}
+        
+        # the list of data split files: not including validation data if it is set as None
+        list_data_split_path = [training_data_path,validation_data_path,testing_data_path] if validation_data_path != None and validation_data_path != '' else [training_data_path,testing_data_path] 
+        for data_path in list_data_split_path:
+            print("create_vocabulary_label_sorted.started.data_path:",data_path)
+            #zhihu_f_train = codecs.open(data_path, 'r', 'utf8')
+            zhihu_f_train = codecs.open(data_path, 'r', 'latin-1')
+            lines=zhihu_f_train.readlines()
+            for i,line in enumerate(lines):
+                if '__label__' in line:  #'__label__-2051131023989903826
+                    label=line[line.index('__label__')+len('__label__'):].strip().replace("\n","")
+                    # add multi-label processing
+                    #print(label)
+                    labels=label.split(" ")
+                    for label in labels:
+                        if label == '':
+                            print('found empty label!') 
+                            continue # this is a quick fix of the empty label problem, simply not recording it.
+                        if vocabulary_label_count_dict.get(label,None) is not None:
+                            vocabulary_label_count_dict[label]=vocabulary_label_count_dict[label]+1
+                        else:
+                            vocabulary_label_count_dict[label]=1
+        list_label=sort_by_value(vocabulary_label_count_dict) # sort the labels by their frequency in the training dataset.
+
+        print("length of list_label:",len(list_label));#print(";list_label:",list_label)
+        countt=0
+
+        ##########################################################################################
+        if use_seq2seq:#if used for seq2seq model,insert two special label(token):_GO AND _END
+            i_list=[0,1,2];label_special_list=[_GO,_END,_PAD]
+            for i,label in zip(i_list,label_special_list):
+                vocabulary_word2index_label[label] = i
+                vocabulary_index2word_label[i] = label
+        #########################################################################################
+        for i,label in enumerate(list_label):
+            if i<10:
+                count_value=vocabulary_label_count_dict[label]
+                print("label:",label,"count_value:",count_value)
+                countt=countt+count_value
+            if vocabulary_label_count_dict[label]>=label_freq_th:
+                indexx = i + 3 if use_seq2seq else i
+                vocabulary_word2index_label[label]=indexx
+                vocabulary_index2word_label[indexx]=label
+        print("count top10:",countt)
+
+        #save to file system if vocabulary of words is not exists.
+        if not os.path.exists(cache_path): #如果不存在写到缓存文件中
+            with open(cache_path, 'ab') as data_f:
+                pickle.dump((vocabulary_word2index_label,vocabulary_index2word_label), data_f)
+    print("create_vocabulary_label_sorted.ended.len of vocabulary_label:",len(vocabulary_index2word_label))
+    return vocabulary_word2index_label,vocabulary_index2word_label
+
+def create_vocabulary(word2vec_model_path,name_scope=''):
+    cache_path ='../cache_vocabulary_label_pik/'+ name_scope + "_word_vocabulary.pik"
+    print("cache_path:",cache_path,"file_exists:",os.path.exists(cache_path))
+    if os.path.exists(cache_path):
+        with open(cache_path, 'rb') as data_f:
+            vocabulary_word2index, vocabulary_index2word=pickle.load(data_f)
+            return vocabulary_word2index, vocabulary_index2word
+    else:
+        vocabulary_word2index={}
+        vocabulary_index2word={}
+        print("create vocabulary. word2vec_model_path:",word2vec_model_path)
+        #model=word2vec.load(word2vec_model_path,kind='bin') # for danielfrg's word2vec models
+        model = Word2Vec.load(word2vec_model_path) # for gensim word2vec models
+        vocabulary_word2index['PAD_ID']=0
+        vocabulary_index2word[0]='PAD_ID'
+        special_index=0
+        if 'biLstmTextRelation' in name_scope:
+            vocabulary_word2index['EOS']=1 # a special token for biLstTextRelation model. which is used between two sentences.
+            vocabulary_index2word[1]='EOS'
+            special_index=1
+        # wv.vocab.keys() is no longer available in gensim 4
+        # for i,vocab in enumerate(model.wv.vocab.keys()):
+        for i,vocab in enumerate(model.wv.key_to_index.keys()):
+            #if vocab == '':
+            #    print(i,vocab)
+            vocabulary_word2index[vocab]=i+1+special_index
+            vocabulary_index2word[i+1+special_index]=vocab
+
+        #save to file system if vocabulary of words is not exists.
+        if not os.path.exists(cache_path):
+            with open(cache_path, 'ab') as data_f:
+                pickle.dump((vocabulary_word2index,vocabulary_index2word), data_f)
+    return vocabulary_word2index,vocabulary_index2word
