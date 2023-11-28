@@ -27,13 +27,11 @@ def train(train_dataloader, valid_dataloader, vocab_size, epochs=1, lr=0.0005, l
     le: boolean - whether to do label and word embedding initiliazation for the model
     """
     model = HierarchicalAttentionNetwork(vocab_size=vocab_size, embed_size=EMBED_SIZE, hidden_size=HIDDEN_SIZE, num_sentences=NUM_SENTENCES, sentence_length=SENTENCE_LENGTH, num_classes=NUM_CLASSES)
-    if checkpoint_to_resume_from is None and le:
+    if checkpoint_to_resume_from is None:
         model = initialize_model(model, le)
-    elif checkpoint_to_resume_from is not None:
+    else:
         # load checkpoint. this is useful for resuming training
         model.load_state_dict(torch.load(checkpoint_to_resume_from))
-    else:
-        pass 
 
     model.to(device)
 
