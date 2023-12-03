@@ -86,3 +86,7 @@ python train.py --epochs 5 --mini --le
 ```
 
 To train without, simply omit .
+
+### Model interpretability
+
+The paper argued that HLAN's major advantage over other architecture is it allows to attribute the prediction of each label to particular word in the discharge notes. We have attempted to interpret label prediction decision of the model using captum python package. See `HLAN_pytorch/visualization_playground.ipynb` for the code and outputs
