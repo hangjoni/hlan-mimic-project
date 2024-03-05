@@ -1,6 +1,5 @@
 # Pytorch implementation for Hierarchical Label-wise Attention Network ("HLAN")
 
-This model was described in . The author shared an implementation in this repo that rely on Python 3.7 and Tensorflow 1.
 
 The Hierarchical Label-wise Attention Network was introduced in this [this paper](https://arxiv.org/abs/2010.15728). The implementation provided by the author of the paper relies on old version of Tensorflow (v1) and is 3000 lines of code. In this project, I implemented the described HLAN architecture using Pytorch, improving readability and brevity of the code (90% shorter code base). I also applied this model on patient discharge notes and predict the ICD labels (name of diagnoses), achieving the same accuracy as reported in the paper. 
 Other improvements include:
