@@ -10,10 +10,9 @@ Other improvements include:
 
 ### Download pre-trained embeddings and processed datasets to ./embeddings and ./datasets
 
-```
-curl https://bd4hstorage.blob.core.windows.net/bd4h/datasets.zip --output datasets.zip && unzip datasets.zip && rm datasets.zip
-curl https://bd4hstorage.blob.core.windows.net/bd4h/embeddings.zip --output embeddings.zip && unzip datasets.zip && rm embeddings.zip
-```
+[datasets link to download](https://drive.google.com/file/d/1VxmdwUpeaSwLnDaC2J2qs_43k-i21oE-/view?usp=sharing)
+[embeddings link to download](https://drive.google.com/file/d/1Gwl9CI0O9xQxDXJfKsMp7eroRG3dI_fE/view?usp=share_link)
+
 
 The folder structure should be something like this:
 
